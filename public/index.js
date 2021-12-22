@@ -43,7 +43,7 @@ socket.on('question', (question) => {
     closeOnClickOutside: false,
     closeOnEsc: false
   }).then(answer => {
-    socket.emit("answer", question.answers[answer - 1])
+    socket.emit("answer", ans[answer - 1])
     swal({
       title: waitingMessages[Math.floor(Math.random() * 6)],
       buttons: false,
@@ -54,10 +54,10 @@ socket.on('question', (question) => {
   })
 })
 
-socket.on("correct", async _ => {
+socket.on("correct", async (place) => {
   swal({
     title: "Correct!",
-    text: "Keep it up :)",
+    text: `Keep it up :) You're #${place+1}`,
     icon: "success",
     buttons: false,
     closeOnClickOutside: false,
@@ -65,10 +65,10 @@ socket.on("correct", async _ => {
   })
 })
 
-socket.on("incorrect", async _ => {
+socket.on("incorrect", async (place) => {
   swal({
     title: "Sorry! That was incorrect",
-    text: "Better luck next time!",
+    text: `Better luck next time! You're #${place+1}`,
     icon: "error",
     buttons: false,
     closeOnClickOutside: false,
@@ -76,10 +76,10 @@ socket.on("incorrect", async _ => {
   })
 })
 
-socket.on("noAnswer", async _ => {
+socket.on("noAnswer", async (place) => {
   swal({
     title: "Not fast enough!",
-    text: "Oops :(",
+    text: `Oops :( You're #${place+1}`,
     icon: "warning",
     buttons: false,
     closeOnClickOutside: false,
@@ -90,7 +90,7 @@ socket.on("noAnswer", async _ => {
 socket.on("gameover", async (leaderboard) => {
     let leaderboardDisplay = document.createElement("ul")
     for (player of leaderboard) {
-        leaderboardDisplay.innerHTML += `<li>${player[0]}: ${player[1]}</li>`
+        leaderboardDisplay.innerHTML += `<li><b>${player[0]}</b> - Score:${player[1]}</li>`
     }
     swal({
         title: "Game over!",

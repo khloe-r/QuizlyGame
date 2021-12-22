@@ -204,16 +204,20 @@ io.on('connection', (socket) => {
   })
 
   timeUpEvent.on("timeUp", (correctAnswer) => {
+    console.log(attempt, correctAnswer)
+    console.log(sortLeaderboard())
     if (attempt) {
       if(attempt === correctAnswer) {
         userPointsMap[socket.id][1]++
-        socket.emit("correct")
+        socket.emit("correct", sortLeaderboard().indexOf(socket.id))
       } else {
-        socket.emit("incorrect")
+        sortLeaderboard()
+        socket.emit("incorrect", sortLeaderboard().indexOf(socket.id))
       }
       attempt = ""
     } else {
-      socket.emit("noAnswer")
+      sortLeaderboard()
+      socket.emit("noAnswer", sortLeaderboard().indexOf(socket.id))
     }
   })
 })
@@ -223,10 +227,26 @@ http.listen(3000, () => {
   console.log('listening on *:3000')
 })
 
+function sortLeaderboard() {
+  let scores = {}
+  let leaderboard = []
+  for (let user in userPointsMap) {
+    if (userPointsMap[user][1] in scores) {
+      scores[userPointsMap[user][1]].push(user)
+    } else {
+      scores[userPointsMap[user][1]] = [user]
+    }
+  }
+  mxvalue = Math.max(...Object.keys(scores))
+  for (let i = mxvalue; i >= 0; i--) {
+    if (i in scores) {
+      leaderboard = leaderboard.concat(scores[i])
+    }
+  }
+  return leaderboard
+}
 
 
 // Points
 
-let userPointsMap = {
-  
-}
+let userPointsMap = {}

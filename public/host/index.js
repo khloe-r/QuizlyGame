@@ -1,10 +1,11 @@
 const socket = io()
 
-let players = document.createElement("ul")
+let players = document.createElement("h4")
+let names = 0
 let loader = document.createElement("div")
 loader.classList.add("loader")
 
-counter = 0
+let counter = 0
 let answerCount = document.createElement("p")
 answerCount.innerText = `Number of answers submitted so far: ${counter}` 
 
@@ -29,7 +30,8 @@ socket.on('connected', async () => {
 })
 
 socket.on('name', async (name) => {
-  players.innerHTML += `<li>${name}</li>`
+  names += 1
+  players.innerHTML += `<span class="badge bg-warning text-dark"> ${name} </span>`
 })
 
 socket.on('answer', async (a) => {
@@ -38,8 +40,9 @@ socket.on('answer', async (a) => {
 })
 
 socket.on("timeUp", async (scores) => {
-    let scoreDisplay = document.createElement("ul")
+    let scoreDisplay = document.createElement("ol")
     counter = 0
+    // socket.emit("score", scores)
     swal({
         title: "Leaderboard:",
         button: "Next",
@@ -56,6 +59,9 @@ socket.on("timeUp", async (scores) => {
             closeOnClickOutside: false,
             closeOnEsc: false
         })
+        if (counter === names) {
+          socket.emit("timeUp")
+        }
     })
 
     for ([player, score] of scores) {
