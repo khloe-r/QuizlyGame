@@ -30,7 +30,8 @@ socket.on('connected', async _ => {
 
 socket.on('question', (question) => {
   btns = {}
-  question.answers.map((a, i) => {
+  ans = question.answers.split(',')
+  ans.map((a, i) => {
     btns[i+1] = {
       text: a,
       value: i+1

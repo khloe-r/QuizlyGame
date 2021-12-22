@@ -9,68 +9,11 @@ const io = require('socket.io')(http)
 const events = require('events')
 const timeUpEvent = new events.EventEmitter()
 
-io.on('connection', (socket) => {
-  let attempt = ""
+// Create SQLite Database
+const sqlite3 = require('sqlite3').verbose();
+let db = new sqlite3.Database('./questions.db');
 
-  socket.emit('connected')
-  socket.once("name", (name) => {
-    userPointsMap[socket.id] = [name, 0]
-    io.emit("name", name)
-  })
-
-  socket.once("start", async () => {
-    for (const question of questions) {
-      await new Promise(async (resolve) => {
-        const toSend = {
-          ...question
-        }
-        
-        setTimeout(() => {
-          timeUpEvent.emit("timeUp", question.correctAnswer)
-          const sortedValues = Object.values(userPointsMap).sort(([, a], [, b]) => b - a)
-          const top5 = sortedValues.slice(0, 5)
-
-          io.emit("timeUp", top5)
-
-          socket.once("next", () => {
-            resolve()
-          })
-        }, question.time * 1000)
-
-        delete toSend.correctAnswer
-        io.emit('question', toSend)
-      })
-    }
-
-    const sortedValues = Object.values(userPointsMap).sort(([, a], [, b]) => b - a)
-    io.emit("gameover", sortedValues)
-    process.exit(0)
-  })
-
-  socket.on("answer", answer => {
-    attempt = answer
-    io.emit("answer", answer)
-  })
-
-  timeUpEvent.on("timeUp", (correctAnswer) => {
-    if (attempt) {
-      if(attempt === correctAnswer) {
-        userPointsMap[socket.id][1]++
-        socket.emit("correct")
-      } else {
-        socket.emit("incorrect")
-      }
-      attempt = ""
-    } else {
-      socket.emit("noAnswer")
-    }
-  })
-})
-
-app.use(express.static('public'))
-http.listen(3000, () => {
-  console.log('listening on *:3000')
-})
+let create_db = `CREATE TABLE defaultQuestions (question_id INTEGER PRIMARY KEY, text TEXT NOT NULL, time INTEGER, answers TEXT NOT NULL, correctAnswer TEXT NOT NULL)`
 
 // Question Data
 const questions = [{
@@ -182,6 +125,105 @@ const questions = [{
         correctAnswer: "To burn away the old year and start with a clean slate."
     },
 ]
+
+const q_data = questions.map((q) => {
+ return [q.text, q.time, q.answers.toString(), q.correctAnswer]
+})
+
+
+db.serialize(function() {
+    db.run('DROP TABLE IF EXISTS defaultQuestions');
+    db.run(create_db, function (err) {
+      if (err === null) {
+        q_data.map((q) => {
+          db.run(`INSERT INTO defaultQuestions (text, time, answers, correctAnswer) VALUES(?,?,?,?)`, q);
+        }) 
+
+      }
+    });
+  })
+
+let selectQuestions = 'SELECT * FROM defaultQuestions'
+
+let qstions = []
+
+
+io.on('connection', (socket) => {
+  let attempt = ""
+
+  db.all(selectQuestions, [], (err, rows) => {
+    if (err) {
+      throw err;
+    }
+    rows.forEach((row) => {
+      qstions.push(row);
+      console.log(qstions[0])
+    });
+  });
+  
+  
+  socket.emit('connected')
+  socket.once("name", (name) => {
+    userPointsMap[socket.id] = [name, 0]
+    io.emit("name", name)
+  })
+
+  socket.once("start", async () => {
+    for (const question of qstions) {
+      await new Promise(async (resolve) => {
+        const toSend = {
+          ...question
+        }
+        
+        setTimeout(() => {
+          timeUpEvent.emit("timeUp", question.correctAnswer)
+          const sortedValues = Object.values(userPointsMap).sort(([, a], [, b]) => b - a)
+          const top5 = sortedValues.slice(0, 5)
+
+          io.emit("timeUp", top5)
+
+          socket.once("next", () => {
+            resolve()
+          })
+        }, question.time * 1000)
+
+        delete toSend.correctAnswer
+        io.emit('question', toSend)
+      })
+    }
+
+    const sortedValues = Object.values(userPointsMap).sort(([, a], [, b]) => b - a)
+    io.emit("gameover", sortedValues)
+    db.close();
+    process.exit(0)
+  })
+
+  socket.on("answer", answer => {
+    attempt = answer
+    io.emit("answer", answer)
+  })
+
+  timeUpEvent.on("timeUp", (correctAnswer) => {
+    if (attempt) {
+      if(attempt === correctAnswer) {
+        userPointsMap[socket.id][1]++
+        socket.emit("correct")
+      } else {
+        socket.emit("incorrect")
+      }
+      attempt = ""
+    } else {
+      socket.emit("noAnswer")
+    }
+  })
+})
+
+app.use(express.static('public'))
+http.listen(3000, () => {
+  console.log('listening on *:3000')
+})
+
+
 
 // Points
 
