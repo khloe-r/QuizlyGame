@@ -4,6 +4,11 @@ let players = document.createElement("ul")
 let loader = document.createElement("div")
 loader.classList.add("loader")
 
+counter = 0
+let answerCount = document.createElement("p")
+answerCount.innerText = `Number of answers submitted so far: ${counter}` 
+
+
 socket.on('connected', async () => {
   swal({
     title: "Players:",
@@ -14,9 +19,9 @@ socket.on('connected', async () => {
   }).then(_ => {
     socket.emit("start")
     swal({
-      title: "Waiting for players to answer",
+      title: "Waiting for players to answer...",
       buttons: false,
-      content: loader,
+      content: answerCount,
       closeOnClickOutside: false,
       closeOnEsc: false
     })
@@ -27,9 +32,14 @@ socket.on('name', async (name) => {
   players.innerHTML += `<li>${name}</li>`
 })
 
+socket.on('answer', async (a) => {
+  counter += 1
+  answerCount.innerText = `Number of answers submitted so far: ${counter}`  
+})
+
 socket.on("timeUp", async (scores) => {
     let scoreDisplay = document.createElement("ul")
-
+    counter = 0
     swal({
         title: "Leaderboard:",
         button: "Next",
@@ -38,10 +48,11 @@ socket.on("timeUp", async (scores) => {
         closeOnEsc: false
     }).then(_ => {
         socket.emit("next")
+        answerCount.innerText = `Number of answers submitted so far: ${counter}` 
         swal({
             title: "Waiting for players to answer",
             buttons: false,
-            content: loader,
+            content: answerCount,
             closeOnClickOutside: false,
             closeOnEsc: false
         })

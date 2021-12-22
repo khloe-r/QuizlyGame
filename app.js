@@ -12,7 +12,6 @@ const timeUpEvent = new events.EventEmitter()
 io.on('connection', (socket) => {
   let attempt = ""
 
-  console.log("A user connected!")
   socket.emit('connected')
   socket.once("name", (name) => {
     userPointsMap[socket.id] = [name, 0]
@@ -50,6 +49,7 @@ io.on('connection', (socket) => {
 
   socket.on("answer", answer => {
     attempt = answer
+    io.emit("answer", answer)
   })
 
   timeUpEvent.on("timeUp", (correctAnswer) => {
@@ -77,8 +77,6 @@ const questions = [{
         text: "In Spain, people eat 12 ____ right before midnight. One for each bell strike.",
         time: 10,
         answers: [
-            "olives",
-            "tapas",
             "grapes",
             "pieces of bread"
         ],

@@ -1,4 +1,12 @@
 const socket = io()
+const waitingMessages = [
+  'But were you too fast?',
+  "Woah that was fast!",
+  'Speeding through I see...',
+  'Take it slow there partner!',
+  'Fingers crossed!',
+  'Just in the nick of time!'
+]
 
 let loader = document.createElement("div")
 loader.classList.add("loader")
@@ -21,32 +29,22 @@ socket.on('connected', async _ => {
 })
 
 socket.on('question', (question) => {
+  btns = {}
+  question.answers.map((a, i) => {
+    btns[i+1] = {
+      text: a,
+      value: i+1
+    }
+  })
   swal({
     title: question.text,
-    buttons: {
-      1: {
-        text: question.answers[0],
-        value: 1,
-      },
-      2: {
-        text: question.answers[1],
-        value: 2,
-      },
-      3: {
-        text: question.answers[2],
-        value: 3
-      },
-      4: {
-        text: question.answers[3],
-        value: 4
-      }
-    },
+    buttons: btns,
     closeOnClickOutside: false,
     closeOnEsc: false
   }).then(answer => {
     socket.emit("answer", question.answers[answer - 1])
     swal({
-      title: "Waiting for others",
+      title: waitingMessages[Math.floor(Math.random() * 6)],
       buttons: false,
       content: loader,
       closeOnClickOutside: false,
