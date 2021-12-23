@@ -11,20 +11,42 @@ const waitingMessages = [
 let loader = document.createElement("div")
 loader.classList.add("loader")
 
-socket.on('connected', async _ => {
-    const name = await swal("Your name:", {
+socket.on('connected', async () => {
+    const gameCode = await swal(`Enter game code:`, {
+        content: "input",
+        button: "Next",
+        closeOnClickOutside: false,
+        closeOnEsc: false
+    })
+
+    socket.emit("code", gameCode)
+
+    socket.on('invalidPin', async _ => {
+      const codeGame = await swal(`Invalid! Enter game code:`, {
+          content: "input",
+          button: "Next",
+          closeOnClickOutside: false,
+          closeOnEsc: false
+      })
+
+      socket.emit("code", codeGame)
+    })
+
+    socket.on('validPin', async (pin) => {
+      const name = await swal("Your name:", {
         content: "input",
         button: "Join",
         closeOnClickOutside: false,
         closeOnEsc: false
-    })
-    socket.emit("name", name)
-    swal({
+      })
+      socket.emit("name", name)
+      swal({
         title: "Waiting for host",
         buttons: false,
         content: loader,
         closeOnClickOutside: false,
         closeOnEsc: false
+      })  
     })
 })
 

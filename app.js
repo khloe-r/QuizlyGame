@@ -8,6 +8,9 @@ const io = require('socket.io')(http)
 
 const events = require('events')
 const timeUpEvent = new events.EventEmitter()
+const dayjs = require("dayjs");
+var relativeTime = require('dayjs/plugin/relativeTime')
+dayjs.extend(relativeTime)
 
 // Create SQLite Database
 const sqlite3 = require('sqlite3').verbose();
@@ -147,6 +150,8 @@ let selectQuestions = 'SELECT * FROM defaultQuestions'
 
 let qstions = []
 
+const c = Buffer.from(dayjs().format(), 'binary').toString('base64').substring(23, 29)
+
 
 io.on('connection', (socket) => {
   let attempt = ""
@@ -161,8 +166,19 @@ io.on('connection', (socket) => {
     });
   });
   
+  const code = c 
   
-  socket.emit('connected')
+  io.emit('connected', code)
+
+  socket.on("code", (gameCode) => {
+    console.log(gameCode, code)
+    if (gameCode === code) {
+      socket.emit("validPin", code)
+    } else {
+      socket.emit("invalidPin")
+    }
+  })
+
   socket.once("name", (name) => {
     userPointsMap[socket.id] = [name, 0]
     io.emit("name", name)
@@ -175,8 +191,9 @@ io.on('connection', (socket) => {
           ...question
         }
         
+        console.log(dayjs().get('millisecond'))
         setTimeout(() => {
-          timeUpEvent.emit("timeUp", question.correctAnswer)
+          timeUpEvent.emit("timeUp", [question.correctAnswer, dayjs()])
           const sortedValues = Object.values(userPointsMap).sort(([, a], [, b]) => b - a)
           const top5 = sortedValues.slice(0, 5)
 
@@ -200,15 +217,16 @@ io.on('connection', (socket) => {
 
   socket.on("answer", answer => {
     attempt = answer
+    timestamp = dayjs()
     io.emit("answer", answer)
   })
 
-  timeUpEvent.on("timeUp", (correctAnswer) => {
-    console.log(attempt, correctAnswer)
+  timeUpEvent.on("timeUp", (answerInfo) => {
+    console.log(attempt, answerInfo[0])
     console.log(sortLeaderboard())
     if (attempt) {
-      if(attempt === correctAnswer) {
-        userPointsMap[socket.id][1]++
+      if(attempt === answerInfo[0]) {
+        userPointsMap[socket.id][1] += answerInfo[1].diff(timestamp)
         socket.emit("correct", sortLeaderboard().indexOf(socket.id))
       } else {
         sortLeaderboard()

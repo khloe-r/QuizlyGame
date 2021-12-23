@@ -1,6 +1,7 @@
 const socket = io()
 
 let players = document.createElement("h4")
+players.innerHTML += "Players: <br><br>"
 let names = 0
 let loader = document.createElement("div")
 loader.classList.add("loader")
@@ -10,9 +11,9 @@ let answerCount = document.createElement("p")
 answerCount.innerText = `Number of answers submitted so far: ${counter}` 
 
 
-socket.on('connected', async () => {
+socket.on('connected', async (code) => {
   swal({
-    title: "Players:",
+    title: `Your Game Code is ${code}`,
     button: "Start",
     content: players,
     closeOnClickOutside: false,
@@ -31,7 +32,7 @@ socket.on('connected', async () => {
 
 socket.on('name', async (name) => {
   names += 1
-  players.innerHTML += `<span class="badge bg-warning text-dark"> ${name} </span>`
+  players.innerHTML += `&ensp; <span class="badge bg-warning text-dark"> ${name}</span> &ensp;`
 })
 
 socket.on('answer', async (a) => {
@@ -65,14 +66,14 @@ socket.on("timeUp", async (scores) => {
     })
 
     for ([player, score] of scores) {
-        scoreDisplay.innerHTML += `<li>${player}: ${score}</li>`
+        scoreDisplay.innerHTML += `<li><b>${player}</b>: ${score}</li>`
     }
 })
 
 socket.on("gameover", async (leaderboard) => {
     let leaderboardDisplay = document.createElement("ul")
     for (player of leaderboard) {
-        leaderboardDisplay.innerHTML += `<li>${player[0]}: ${player[1]}</li>`
+        leaderboardDisplay.innerHTML += `<li><b>${player[0]}</b>: ${player[1]}</li>`
     }
     swal({
         title: "Game over!",
