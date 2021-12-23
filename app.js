@@ -155,6 +155,7 @@ const c = Buffer.from(dayjs().format(), 'binary').toString('base64').substring(2
 
 io.on('connection', (socket) => {
   let attempt = ""
+  let timestamp = ""
 
   db.all(selectQuestions, [], (err, rows) => {
     if (err) {
@@ -193,7 +194,7 @@ io.on('connection', (socket) => {
         
         console.log(dayjs().get('millisecond'))
         setTimeout(() => {
-          timeUpEvent.emit("timeUp", [question.correctAnswer, dayjs()])
+          timeUpEvent.emit("timeUp", [question.correctAnswer, dayjs(), question.time])
           const sortedValues = Object.values(userPointsMap).sort(([, a], [, b]) => b - a)
           const top5 = sortedValues.slice(0, 5)
 
@@ -216,9 +217,9 @@ io.on('connection', (socket) => {
   })
 
   socket.on("answer", answer => {
-    attempt = answer
-    timestamp = dayjs()
-    io.emit("answer", answer)
+    attempt = answer[0]
+    timestamp = answer[1]
+    io.emit("answer", answer[0])
   })
 
   timeUpEvent.on("timeUp", (answerInfo) => {
@@ -226,7 +227,7 @@ io.on('connection', (socket) => {
     console.log(sortLeaderboard())
     if (attempt) {
       if(attempt === answerInfo[0]) {
-        userPointsMap[socket.id][1] += answerInfo[1].diff(timestamp)
+        userPointsMap[socket.id][1] += (answerInfo[2]*1000) - (answerInfo[1].diff(timestamp))
         socket.emit("correct", sortLeaderboard().indexOf(socket.id))
       } else {
         sortLeaderboard()

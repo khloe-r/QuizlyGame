@@ -8,6 +8,7 @@ const waitingMessages = [
   'Just in the nick of time!'
 ]
 
+
 let loader = document.createElement("div")
 loader.classList.add("loader")
 
@@ -65,7 +66,7 @@ socket.on('question', (question) => {
     closeOnClickOutside: false,
     closeOnEsc: false
   }).then(answer => {
-    socket.emit("answer", ans[answer - 1])
+    socket.emit("answer", [ans[answer - 1], dayjs()])
     swal({
       title: waitingMessages[Math.floor(Math.random() * 6)],
       buttons: false,
