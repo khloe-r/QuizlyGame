@@ -192,21 +192,30 @@ io.on('connection', (socket) => {
           ...question
         }
         
-        console.log(dayjs().get('millisecond'))
-        setTimeout(() => {
-          timeUpEvent.emit("timeUp", [question.correctAnswer, dayjs(), question.time])
-          const sortedValues = Object.values(userPointsMap).sort(([, a], [, b]) => b - a)
-          const top5 = sortedValues.slice(0, 5)
-
-          io.emit("timeUp", top5)
-
-          socket.once("next", () => {
-            resolve()
-          })
-        }, question.time * 1000)
-
         delete toSend.correctAnswer
         io.emit('question', toSend)
+
+        await new Promise((endTimer) => {
+            setTimeout(() => {
+                endTimer()
+            }, question.time * 1000)
+            socket.once("skip", () => {
+                endTimer()
+            })
+            socket.once("roundOver", () => {
+                endTimer()
+            })
+        })
+        timeUpEvent.emit("timeUp", [question.correctAnswer, dayjs(), question.time])
+        const sortedValues = Object.values(userPointsMap).sort(([, a], [, b]) => b - a)
+        const top5 = sortedValues.slice(0, 5)
+
+        io.emit("timeUp", top5)
+
+        socket.once("next", () => {
+          resolve()
+        })
+
       })
     }
 

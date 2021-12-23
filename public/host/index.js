@@ -20,12 +20,17 @@ socket.on('connected', async (code) => {
     closeOnEsc: false
   }).then(_ => {
     socket.emit("start")
+
     swal({
       title: "Waiting for players to answer...",
-      buttons: false,
+      button: "Skip",
       content: answerCount,
       closeOnClickOutside: false,
       closeOnEsc: false
+    }).then(skipped => {
+      if (skipped) {
+          socket.emit("skip")
+      }
     })
   })
 })
@@ -38,6 +43,9 @@ socket.on('name', async (name) => {
 socket.on('answer', async (a) => {
   counter += 1
   answerCount.innerText = `Number of answers submitted so far: ${counter}`  
+  if (counter == names) {
+    socket.emit("roundOver")
+  }
 })
 
 socket.on("timeUp", async (scores) => {
