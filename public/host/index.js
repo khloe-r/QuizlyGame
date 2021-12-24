@@ -12,26 +12,40 @@ answerCount.innerText = `Number of answers submitted so far: ${counter}`
 
 
 socket.on('connected', async (code) => {
-  swal({
-    title: `Your Game Code is ${code}`,
-    button: "Start",
-    content: players,
+  swal(`Pick a category:`,
+  {
+    title: 'Welcome to Quizly!',
+    buttons: {
+      1: {
+        text: "New Year's Trivia",
+        value: 1
+      }
+    },
     closeOnClickOutside: false,
     closeOnEsc: false
-  }).then(_ => {
-    socket.emit("start")
-
+  }).then((btn) => {
     swal({
-      title: "Waiting for players to answer...",
-      button: "Skip",
-      content: answerCount,
+      title: `Your Game Code is ${code}`,
+      button: "Start",
+      content: players,
       closeOnClickOutside: false,
       closeOnEsc: false
-    }).then(skipped => {
-      if (skipped) {
-          socket.emit("skip")
-      }
+    }).then(_ => {
+      socket.emit("start")
+
+      swal({
+        title: "Waiting for players to answer...",
+        button: "Skip",
+        content: answerCount,
+        closeOnClickOutside: false,
+        closeOnEsc: false
+      }).then(skipped => {
+        if (skipped) {
+            socket.emit("skip")
+        }
+      })
     })
+
   })
 })
 
@@ -71,6 +85,20 @@ socket.on("timeUp", async (scores) => {
         if (counter === names) {
           socket.emit("timeUp")
         }
+        socket.on("gameover", async (leaderboard) => {
+          let leaderboardDisplay = document.createElement("ol")
+          for (player of leaderboard) {
+              leaderboardDisplay.innerHTML += `<li><b>${player[0]}</b>: ${player[1]}</li>`
+          }
+          swal({
+              title: "Game over!",
+              icon: "success",
+              content: leaderboardDisplay,
+              buttons: false,
+              closeOnClickOutside: false,
+              closeOnEsc: false
+          })
+      })
     })
 
     for ([player, score] of scores) {
@@ -79,9 +107,20 @@ socket.on("timeUp", async (scores) => {
 })
 
 socket.on("gameover", async (leaderboard) => {
-    let leaderboardDisplay = document.createElement("ul")
-    for (player of leaderboard) {
-        leaderboardDisplay.innerHTML += `<li><b>${player[0]}</b>: ${player[1]}</li>`
+    let leaderboardDisplay = document.createElement("div")
+    console.log(leaderboard)
+    for (let i = 0; i < Math.min(leaderboard.length, 5); i++) {
+        let begin = ""
+        if (i === 0) {
+          begin = `<p><b>First Place:</b>`
+        } else if (i === 1) {
+          begin = `<p><b>Second Place:</b>`
+        } else if (i === 2) {
+          begin = `<p><b>Third Place:</b>`
+        } else if (i === 3) {
+          begin = `<p><b>Runner Ups:</b></p><br><p>`
+        }
+        leaderboardDisplay.innerHTML += begin + ` ${leaderboard[i][0]} - ${leaderboard[i][1]} points</p>`
     }
     swal({
         title: "Game over!",

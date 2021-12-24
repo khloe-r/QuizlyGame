@@ -11,9 +11,12 @@ const waitingMessages = [
 
 let loader = document.createElement("div")
 loader.classList.add("loader")
+let placement = 1
 
 socket.on('connected', async () => {
-    const gameCode = await swal(`Enter game code:`, {
+    const gameCode = await swal(`Enter game code:`,
+    {
+        title: "Welcome to Quizly!",
         content: "input",
         button: "Next",
         closeOnClickOutside: false,
@@ -78,6 +81,7 @@ socket.on('question', (question) => {
 })
 
 socket.on("correct", async (place) => {
+  placement = place + 1
   swal({
     title: "Correct!",
     text: `Keep it up :) You're #${place+1}`,
@@ -89,6 +93,7 @@ socket.on("correct", async (place) => {
 })
 
 socket.on("incorrect", async (place) => {
+  placement = place + 1
   swal({
     title: "Sorry! That was incorrect",
     text: `Better luck next time! You're #${place+1}`,
@@ -100,6 +105,7 @@ socket.on("incorrect", async (place) => {
 })
 
 socket.on("noAnswer", async (place) => {
+  placement = place + 1
   swal({
     title: "Not fast enough!",
     text: `Oops :( You're #${place+1}`,
@@ -111,10 +117,10 @@ socket.on("noAnswer", async (place) => {
 })
 
 socket.on("gameover", async (leaderboard) => {
-    let leaderboardDisplay = document.createElement("ul")
-    for (player of leaderboard) {
-        leaderboardDisplay.innerHTML += `<li><b>${player[0]}</b> - Score:${player[1]}</li>`
-    }
+    let leaderboardDisplay = document.createElement("p")
+    leaderboardDisplay.innerHTML = `You finished at #${placement}! Woohoo!`
+    console.log(leaderboard)
+    console.log(socket.id)
     swal({
         title: "Game over!",
         icon: "info",
