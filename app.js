@@ -148,17 +148,17 @@ const q_data = questions.map((q) => {
 })
 
 
-db.serialize(function() {
-    db.run('DROP TABLE IF EXISTS defaultQuestions');
-    db.run(create_db, function (err) {
-      if (err === null) {
-        q_data.map((q) => {
-          db.run(`INSERT INTO defaultQuestions (text, time, answers, correctAnswer) VALUES(?,?,?,?)`, q);
-        }) 
+// db.serialize(function() {
+//     db.run('DROP TABLE IF EXISTS defaultQuestions');
+//     db.run(create_db, function (err) {
+//       if (err === null) {
+//         q_data.map((q) => {
+//           db.run(`INSERT INTO defaultQuestions (text, time, answers, correctAnswer) VALUES(?,?,?,?)`, q);
+//         }) 
 
-      }
-    });
-  })
+//       }
+//     });
+//   })
 
 let selectQuestions = 'SELECT * FROM defaultQuestions'
 
@@ -187,8 +187,15 @@ async function getQuestions(btn) {
 
     return [q_text, 15, options.toString(), correct]
   })
-  console.log(qs)
-  return data
+  //console.log(qs)
+  return qs
+}
+
+async function getDefault() {
+  let d_info = await questions.map((q) => {
+    return [q.text, q.time, q.answers.toString(), q.correctAnswer]
+  })
+  return d_info
 }
 
 io.on('connection', (socket) => {
@@ -197,14 +204,44 @@ io.on('connection', (socket) => {
   let questCount = 0
   let counterQ = 0
 
-  socket.once("category", (btn) => {
+  socket.once("category", async (btn) => {
     console.log(btn)
     if (btn === 1) {
       console.log('new years')
-    } else {
-      let qdata = getQuestions(btn)
-    }
+      getDefault().then(response => {
+        db.serialize(function() {
+        db.run('DROP TABLE IF EXISTS defaultQuestions');
+        db.run(create_db, function (err) {
+          if (err === null) {
+            response.map(async (q, index) => {
+                console.log(index)
+                await db.run(`INSERT INTO defaultQuestions (text, time, answers, correctAnswer) VALUES(?,?,?,?)`, q);
+              }) 
 
+            }
+          });
+        })
+      })
+    } else {
+      // let qdata = await getQuestions(btn)
+      // console.log(qdata)
+      getQuestions(btn).then(response => {
+        db.serialize(function() {
+        db.run('DROP TABLE IF EXISTS defaultQuestions');
+        db.run(create_db, function (err) {
+          if (err === null) {
+            response.map(async (q, index) => {
+              console.log(index)
+              await db.run(`INSERT INTO defaultQuestions (text, time, answers, correctAnswer) VALUES(?,?,?,?)`, q);
+            }) 
+
+          }
+        });
+      });
+      
+    })
+    }
+    
     db.all(selectQuestions, [], (err, rows) => {
       if (err) {
         throw err;

@@ -19,12 +19,11 @@ socket.on('connected', async (code) => {
       1: {
         text: "New Year's Trivia",
         value: 1
+      },
+      21: {
+        text: "Sports Trivia",
+        value: 21
       }
-      // ,
-      // 21: {
-      //   text: "Sports Trivia",
-      //   value: 21
-      // }
     },
     closeOnClickOutside: false,
     closeOnEsc: false
