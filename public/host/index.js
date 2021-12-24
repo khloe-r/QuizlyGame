@@ -20,10 +20,16 @@ socket.on('connected', async (code) => {
         text: "New Year's Trivia",
         value: 1
       }
+      // ,
+      // 21: {
+      //   text: "Sports Trivia",
+      //   value: 21
+      // }
     },
     closeOnClickOutside: false,
     closeOnEsc: false
   }).then((btn) => {
+    socket.emit("category", btn)
     swal({
       title: `Your Game Code is ${code}`,
       button: "Start",

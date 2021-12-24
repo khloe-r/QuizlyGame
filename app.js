@@ -12,6 +12,8 @@ const dayjs = require("dayjs");
 var relativeTime = require('dayjs/plugin/relativeTime')
 dayjs.extend(relativeTime)
 
+const axios = require('axios').default;
+
 // Create SQLite Database
 const sqlite3 = require('sqlite3').verbose();
 let db = new sqlite3.Database('./questions.db');
@@ -164,6 +166,30 @@ let qstions = []
 
 const c = Buffer.from(dayjs().format(), 'binary').toString('base64').substring(23, 29)
 
+async function getQuestions(btn) {
+  let response = await axios.get(`https://opentdb.com/api.php?amount=10&category=${btn}&difficulty=medium&type=multiple&encode=base64`)
+  //console.log(response.data)
+  let data = await response.data
+  //console.log(data.results)
+  let qs = data.results.map((q) => {
+    let options = q.incorrect_answers
+    options.push(q.correct_answer)
+    options = options.map((opt) => {
+      let buff_opt = new Buffer(opt, 'base64');
+      return buff_opt.toString('ascii');
+    })
+
+    let buff = new Buffer(q.correct_answer, 'base64');
+    let correct = buff.toString('ascii');
+
+    buff = new Buffer(q.question, 'base64');
+    let q_text = buff.toString('ascii');
+
+    return [q_text, 15, options.toString(), correct]
+  })
+  console.log(qs)
+  return data
+}
 
 io.on('connection', (socket) => {
   let attempt = ""
@@ -171,23 +197,32 @@ io.on('connection', (socket) => {
   let questCount = 0
   let counterQ = 0
 
-  db.all(selectQuestions, [], (err, rows) => {
-    if (err) {
-      throw err;
+  socket.once("category", (btn) => {
+    console.log(btn)
+    if (btn === 1) {
+      console.log('new years')
+    } else {
+      let qdata = getQuestions(btn)
     }
-    rows.forEach((row) => {
-      qstions.push(row);
-      console.log(qstions[0])
-    });
-  });
 
-  db.all('SELECT COUNT(*) FROM defaultQuestions', [], (err, countNum) => {
-    if (err) {
-      throw err;
-    }
-    questCount = countNum[0]['COUNT(*)']
+    db.all(selectQuestions, [], (err, rows) => {
+      if (err) {
+        throw err;
+      }
+      rows.forEach((row) => {
+        qstions.push(row);
+        console.log(qstions[0])
+      });
+    });
+
+    db.all('SELECT COUNT(*) FROM defaultQuestions', [], (err, countNum) => {
+      if (err) {
+        throw err;
+      }
+      questCount = countNum[0]['COUNT(*)']
+    })
   })
-  
+
   const code = c 
   
   io.emit('connected', code)
